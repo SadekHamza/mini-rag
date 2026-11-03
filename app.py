@@ -9,21 +9,32 @@ question = st.text_input("Quelle est ta question ?")
 if st.button("Rechercher"):
 
     if uploaded_file is None:
-        st.warning("Tu dois d'abord charger un PDF")
+        st.warning("Tu dois d'abord charger un PDF.")
 
-    elif question == "":
-        st.warning("Tu dois ecrire une question")
+    elif question.strip() == "":
+        st.warning("Tu dois ecrire une question.")
 
     else:
         text = pdf_to_text(uploaded_file)
         chunks = text_to_chunks(text)
-        if len(chunks) == 0:
-            st.warning("aucun texte exploitable dans ce PDF")
+            
 
-        else:
+        try :
             tfidf_search = TfidfSearch(chunks)
-            results = tfidf_search.search(question, 1)
-            document , score = results[0]
-            st.subheader("Resultat le plus pertinent :")
-            st.write(document)
-            st.write("Score de similarité : "+ str(score))
+
+        # une ValueError est declancher si la liste des documents\chunks extraits est vide ou fit_transform ne trouve pas de vocabulaire est donc vocabulary_ est vide ex dans le cas de chunks = ["a b $", "c d"]
+        except ValueError as e: 
+            st.warning(e)
+            
+        else :    
+            results = tfidf_search.search(question, 3)
+
+            # tester si le milleur score est nul ou si le vecteur de la questione est nul 
+            if results[0][1] == 0:
+                st.info("Aucune information trouvée dans le document")
+
+            # afficher les 3 milleures documents\chunks avec leurs scores respectives
+            else :
+                for document , score in results :
+                    st.write(document)
+                    st.write("Score de similarité : "+ str(score))
